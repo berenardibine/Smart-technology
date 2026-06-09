@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STECH Electronics Diagnostic AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1525;--bg3:#141b2d;--bg4:#1a2338;
+  --border:#1e2d4a;--border2:#243450;
+  --accent:#f97316;--blue:#3b82f6;--blue2:#60a5fa;
+  --green:#10b981;--red:#ef4444;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --font-head:'Rajdhani',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+/* Layout */
+.app{display:flex;height:100vh;overflow:hidden}
+/* Sidebar */
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:20px;border-bottom:1px solid var(--border)}
+.brand-icon{width:38px;height:38px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(249,115,22,.35);flex-shrink:0}
+.brand-name{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;letter-spacing:1px}
+.brand-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono)}
+nav{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:none;border:none;color:var(--text2);cursor:pointer;width:100%;text-align:left;font-size:13.5px;font-weight:500;transition:all .15s;font-family:var(--font-body)}
+.nav-btn:hover{background:var(--bg4);color:var(--text)}
+.nav-btn.active{background:rgba(249,115,22,.15);color:var(--accent);border:1px solid rgba(249,115,22,.2)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.status-dot{width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green)}
+/* Main */
+.main{flex:1;overflow-y:auto;background:var(--bg)}
+.page{display:none;padding:32px 36px;max-width:1400px}
+.page.active{display:block}
+.page-header{margin-bottom:28px}
+.page-title{font-family:var(--font-head);font-size:28px;font-weight:700;color:#fff;letter-spacing:.5px}
+.page-sub{font-size:13px;color:var(--text3);margin-top:4px}
+/* Two col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+/* Panel */
+.panel{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.panel-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);padding-bottom:10px}
+/* Forms */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+label.field-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+input,textarea,select{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13.5px;padding:9px 12px;outline:none;transition:border-color .15s;width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(249,115,22,.1)}
+select option{background:var(--bg3)}
+textarea{resize:vertical}
+/* Buttons */
+.btn{border:none;border-radius:8px;cursor:pointer;font-family:var(--font-head);font-weight:600;font-size:15px;letter-spacing:.3px;padding:11px 20px;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:all .15s}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-primary{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.btn-primary:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+.btn-secondary{background:rgba(59,130,246,.15);color:var(--blue2);border:1px solid rgba(59,130,246,.3)}
+.btn-secondary:hover:not(:disabled){background:rgba(59,130,246,.25)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2);font-size:13px;padding:8px 14px;font-family:var(--font-body)}
+.btn-outline:hover{border-color:var(--text2);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25);font-size:12px;padding:7px 12px;font-family:var(--font-body)}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+.btn-sm{font-size:12px;padding:7px 12px}
+.action-row{display:flex;gap:10px;flex-wrap:wrap}
+/* Upload zone */
+.uploader{border:2px dashed var(--border2);border-radius:12px;min-height:170px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:var(--bg4);position:relative;overflow:hidden}
+.uploader:hover{border-color:var(--accent);background:rgba(249,115,22,.04)}
+.uploader input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text3);pointer-events:none}
+.upload-icon{font-size:36px}
+.upload-label{font-size:13px}
+.upload-preview{width:100%;max-height:200px;object-fit:contain;display:none}
+/* Results */
+.result-box{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:18px;max-height:500px;overflow-y:auto;flex:1}
+.result-box p{font-size:13.5px;color:var(--text2);line-height:1.65;margin:4px 0}
+.result-box h3{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.5px;text-transform:uppercase;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(249,115,22,.2)}
+.result-box ul,.result-box ol{padding-left:18px;color:var(--text2);display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.65}
+.result-box strong{color:var(--text);font-weight:600}
+.result-box .warn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:8px 12px;color:#fca5a5;font-size:13px;margin:4px 0}
+/* States */
+.loading-state,.empty-state,.error-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:48px 20px;color:var(--text3)}
+.loading-state p,.empty-state p,.error-state p{font-size:13px;text-align:center;max-width:260px;line-height:1.6}
+.empty-icon{font-size:42px;opacity:.35}
+.spinner-ring{width:40px;height:40px;border-radius:50%;border:3px solid rgba(249,115,22,.2);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-state p{color:#f87171}
+/* Dashboard */
+.dash-stats{display:flex;gap:14px;margin-bottom:24px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 22px;display:flex;flex-direction:column;gap:4px;min-width:120px}
+.stat-num{font-family:var(--font-head);font-size:26px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.dash-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:22px;cursor:pointer;text-align:left;transition:all .2s;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px}
+.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--accent));opacity:0;transition:opacity .2s}
+.dash-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.dash-card:hover::before,.dash-card:hover{border-color:var(--card-color,var(--accent))}
+.dash-card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:4px}
+.dash-card-title{font-family:var(--font-head);font-size:17px;font-weight:600;color:#fff;letter-spacing:.3px}
+.dash-card-desc{font-size:12px;color:var(--text3);line-height:1.5}
+.recent-section h2{font-family:var(--font-head);font-size:17px;color:var(--text2);margin-bottom:12px;letter-spacing:.3px}
+.recent-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.recent-device{font-size:14px;font-weight:600;color:var(--text)}
+.recent-symp{font-size:11px;color:var(--text3);margin-top:2px;max-width:500px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-date{font-size:11px;color:var(--text3);font-family:var(--font-mono);white-space:nowrap;margin-left:16px}
+/* Level buttons */
+.level-group{display:flex;gap:8px}
+.level-btn{flex:1;padding:8px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text3);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;font-family:var(--font-body)}
+.level-btn.active,.level-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(249,115,22,.08)}
+/* Quick fills */
+.quick-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.quick-chip{font-size:11px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);border-radius:4px;padding:4px 9px;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+.quick-chip:hover{border-color:var(--accent);color:var(--accent)}
+/* Learning */
+.learn-wrap{display:grid;grid-template-columns:260px 1fr;gap:20px}
+.topic-panel{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px;overflow-y:auto;max-height:calc(100vh - 180px)}
+.topic-cat{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;padding:4px 8px;margin:10px 0 6px}
+.topic-btn{display:block;width:100%;text-align:left;padding:9px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;margin-bottom:4px;transition:all .15s;font-family:var(--font-body)}
+.topic-btn:hover,.topic-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(249,115,22,.07)}
+/* History */
+.history-wrap{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.history-list{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;overflow-y:auto;max-height:calc(100vh - 180px);display:flex;flex-direction:column;gap:6px}
+.search-row{display:flex;align-items:center;gap:8px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;margin-bottom:4px}
+.search-row input{background:none;border:none;font-size:13px;flex:1;padding:0}
+.history-card{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all .15s}
+.history-card:hover,.history-card.active{border-color:var(--accent);background:rgba(249,115,22,.05)}
+.hist-device{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:3px}
+.hist-symp{font-size:11px;color:var(--text3);line-height:1.4;margin-bottom:6px}
+.hist-date{font-size:10px;color:var(--text3);font-family:var(--font-mono)}
+.detail-panel{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px;overflow-y:auto;max-height:calc(100vh - 180px);display:flex;flex-direction:column;gap:14px}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.detail-title{font-family:var(--font-head);font-size:17px;font-weight:600;color:#fff}
+.detail-date{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:3px}
+.detail-actions{display:flex;gap:8px}
+.detail-section label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+.detail-content{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:13px;color:var(--text2);line-height:1.65;min-height:40px}
+.tips-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tip-chip{font-size:11px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text3)}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+/* API Key Banner */
+.api-banner{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.api-banner p{font-size:13px;color:#fca5a5}
+.api-banner button{white-space:nowrap}
+.api-banner.ok{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25)}
+.api-banner.ok p{color:#6ee7b7}
+.settings-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:560px}
+.settings-card h3{font-family:var(--font-head);font-size:18px;font-weight:600;color:#fff;margin-bottom:6px}
+.settings-card p{font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.6}
+.key-display{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;font-family:var(--font-mono);font-size:13px;color:var(--green);margin-bottom:14px}
+.key-display.none{color:var(--text3)}
+.help-box{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:16px;margin-top:18px}
+.help-box p{font-size:12px;color:var(--text3);margin-bottom:6px;margin-top:0}
+.help-box a{color:var(--blue2);text-decoration:none}
+.help-box a:hover{text-decoration:underline}
+/* Responsive */
+@media(max-width:1100px){.two-col,.learn-wrap,.history-wrap{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.sidebar{width:60px;min-width:60px}.brand-name,.brand-sub,.nav-btn span:last-child,.sidebar-footer span{display:none}.brand{justify-content:center;padding:16px 12px}.nav-btn{justify-content:center}.page{padding:20px 14px}.dash-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-name">STECH</div>
+        <div class="brand-sub">Electronics AI</div>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="showPage('dashboard',this)"><span class="nav-icon">⚡</span><span>Dashboard</span></button>
+      <button class="nav-btn" onclick="showPage('diagnostic',this)"><span class="nav-icon">🔬</span><span>AI Diagnostic</span></button>
+      <button class="nav-btn" onclick="showPage('pcb',this)"><span class="nav-icon">🖥️</span><span>PCB Analyzer</span></button>
+      <button class="nav-btn" onclick="showPage('component',this)"><span class="nav-icon">🔩</span><span>Component ID</span></button>
+      <button class="nav-btn" onclick="showPage('repair',this)"><span class="nav-icon">🔧</span><span>Repair Guide</span></button>
+      <button class="nav-btn" onclick="showPage('circuit',this)"><span class="nav-icon">⚙️</span><span>Circuit AI</span></button>
+      <button class="nav-btn" onclick="showPage('learning',this)"><span class="nav-icon">📚</span><span>Learning</span></button>
+      <button class="nav-btn" onclick="showPage('history',this)"><span class="nav-icon">📋</span><span>History</span></button>
+      <button class="nav-btn" id="nav-settings" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span><span>Settings</span></button>
+    </nav>
+    <div class="sidebar-footer"><div class="status-dot"></div><span>System Ready</span></div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div class="page-title">Diagnostic Dashboard</div>
+        <div class="page-sub">Professional Electronics Repair AI System · v1.0</div>
+      </div>
+      <div class="dash-stats">
+        <div class="stat-card"><div class="stat-num" id="stat-repairs">0</div><div class="stat-label">Total Repairs</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--blue2)" id="stat-today">0</div><div class="stat-label">Today</div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-card" style="--card-color:#3b82f6" onclick="showPage('diagnostic',document.querySelectorAll('.nav-btn')[1])">
+          <div class="dash-card-icon" style="background:rgba(59,130,246,.15);color:#60a5fa">🔬</div>
+          <div class="dash-card-title">AI Diagnostic</div>
+          <div class="dash-card-desc">Diagnose any device by describing symptoms</div>
+        </div>
+        <div class="dash-card" style="--card-color:#f97316" onclick="showPage('pcb',document.querySelectorAll('.nav-btn')[2])">
+          <div class="dash-card-icon" style="background:rgba(249,115,22,.15);color:#f97316">🖥️</div>
+          <div class="dash-card-title">PCB Analyzer</div>
+          <div class="dash-card-desc">Upload PCB photos for AI fault detection</div>
+        </div>
+        <div class="dash-card" style="--card-color:#10b981" onclick="showPage('component',document.querySelectorAll('.nav-btn')[3])">
+          <div class="dash-card-icon" style="background:rgba(16,185,129,.15);color:#10b981">🔩</div>
+          <div class="dash-card-title">Component ID</div>
+          <div class="dash-card-desc">Identify unknown electronic components</div>
+        </div>
+        <div class="dash-card" style="--card-color:#8b5cf6" onclick="showPage('repair',document.querySelectorAll('.nav-btn')[4])">
+          <div class="dash-card-icon" style="background:rgba(139,92,246,.15);color:#a78bfa">🔧</div>
+          <div class="dash-card-title">Repair Guide</div>
+          <div class="dash-card-desc">Generate step-by-step repair procedures</div>
+        </div>
+        <div class="dash-card" style="--card-color:#ef4444" onclick="showPage('circuit',document.querySelectorAll('.nav-btn')[5])">
+          <div class="dash-card-icon" style="background:rgba(239,68,68,.15);color:#f87171">⚙️</div>
+          <div class="dash-card-title">Circuit AI</div>
+          <div class="dash-card-desc">Explain any circuit diagram or PCB layout</div>
+        </div>
+        <div class="dash-card" style="--card-color:#eab308" onclick="showPage('learning',document.querySelectorAll('.nav-btn')[6])">
+          <div class="dash-card-icon" style="background:rgba(234,179,8,.15);color:#facc15">📚</div>
+          <div class="dash-card-title">Learning Center</div>
+          <div class="dash-card-desc">Electronics fundamentals and repair guides</div>
+        </div>
+      </div>
+      <div class="recent-section">
+        <h2>Recent Repairs</h2>
+        <div id="recent-list"><div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><p>No repairs yet. Run your first diagnosis above.</p></div></div>
+      </div>
+    </div>
+
+    <!-- AI Diagnostic -->
+    <div id="page-diagnostic" class="page">
+      <div class="page-header">
+        <div class="page-title">AI Diagnostic Assistant</div>
+        <div class="page-sub">Enter device details and symptoms for AI-powered analysis</div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Device Information</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="field-label">Device Type *</label>
+              <select id="d-type">
+                <option value="">Select device...</option>
+                <option>Smart TV</option><option>Smartphone</option><option>Laptop</option>
+                <option>Desktop PC</option><option>Tablet</option><option>Monitor</option>
+                <option>Printer</option><option>Amplifier</option><option>Inverter</option>
+                <option>Solar System</option><option>Washing Machine</option>
+                <option>Refrigerator</option><option>Microwave</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="field-label">Brand</label>
+              <input id="d-brand" placeholder="e.g. Samsung, LG, Sony...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Model (optional)</label>
+            <input id="d-model" placeholder="e.g. UN55TU7000, iPhone 12...">
+          </div>
+          <div class="form-group">
+            <label class="field-label">Symptoms / Problem Description *</label>
+            <textarea id="d-symptoms" rows="5" placeholder="Describe the fault in detail. Example: Power LED turns blue but screen remains black. No backlight visible even with flashlight."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="runDiagnosis()">🔬 Run AI Diagnosis</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Diagnosis Result</div>
+          <div id="diag-result"><div class="empty-state"><div class="empty-icon">🔬</div><p>Fill in device details and symptoms, then click Run AI Diagnosis.</p></div></div>
+          <div id="diag-actions" style="display:none" class="action-row">
+            <div class="form-group" style="flex:1">
+              <label class="field-label">Technician Notes</label>
+              <textarea id="d-notes" rows="2" placeholder="Add your notes..."></textarea>
+            </div>
+          </div>
+          <div id="diag-save-row" style="display:none" class="action-row">
+            <button class="btn btn-secondary btn-sm" onclick="saveRepair()">💾 Save to History</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCurrentPDF()">📄 Export PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PCB Analyzer -->
+    <div id="page-pcb" class="page">
+      <div class="page-header">
+        <div class="page-title">PCB Fault Analyzer</div>
+        <div class="page-sub">Upload a PCB image to detect burned components, corrosion, and damage</div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Upload PCB Image</div>
+          <div class="uploader" id="pcb-drop">
+            <input type="file" accept="image/*" id="pcb-file" onchange="previewImage('pcb-file','pcb-preview','pcb-placeholder')">
+            <div class="upload-placeholder" id="pcb-placeholder">
+              <div class="upload-icon">📷</div>
+              <div class="upload-label">Drop PCB photo or click to upload</div>
+            </div>
+            <img id="pcb-preview" class="upload-preview" alt="PCB preview">
+          </div>
+          <div class="tips-row">
+            <span class="tip-chip">📸 Good lighting</span>
+            <span class="tip-chip">🔍 Close-up shots</span>
+            <span class="tip-chip">⚡ Highlight damage</span>
+          </div>
+          <button class="btn btn-primary" onclick="analyzePCB()">🖥️ Analyze PCB</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Analysis Result</div>
+          <div id="pcb-result"><div class="empty-state"><div class="empty-icon">🖥️</div><p>Upload a PCB image and click Analyze to detect faults.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Component Identifier -->
+    <div id="page-component" class="page">
+      <div class="page-header">
+        <div class="page-title">Component Identifier</div>
+        <div class="page-sub">Upload an image of any electronic component for instant identification</div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Upload Component Image</div>
+          <div class="uploader">
+            <input type="file" accept="image/*" id="comp-file" onchange="previewImage('comp-file','comp-preview','comp-placeholder')">
+            <div class="upload-placeholder" id="comp-placeholder">
+              <div class="upload-icon">🔩</div>
+              <div class="upload-label">Drop component photo or click to upload</div>
+            </div>
+            <img id="comp-preview" class="upload-preview" alt="Component preview">
+          </div>
+          <div class="tips-row">
+            <span class="tip-chip">Resistor</span><span class="tip-chip">Capacitor</span>
+            <span class="tip-chip">Diode</span><span class="tip-chip">Transistor</span>
+            <span class="tip-chip">MOSFET</span><span class="tip-chip">IC</span>
+            <span class="tip-chip">Sensor</span><span class="tip-chip">Transformer</span>
+          </div>
+          <button class="btn btn-primary" onclick="identifyComponent()">🔩 Identify Component</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Identification Result</div>
+          <div id="comp-result"><div class="empty-state"><div class="empty-icon">🔩</div><p>Upload a component image to identify it.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repair Guide -->
+    <div id="page-repair" class="page">
+      <div class="page-header">
+        <div class="page-title">Repair Guide Generator</div>
+        <div class="page-sub">Generate step-by-step professional repair procedures</div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Repair Details</div>
+          <div style="margin-bottom:6px">
+            <div class="field-label" style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Quick Fill</div>
+            <div class="quick-wrap">
+              <span class="quick-chip" onclick="quickFill('Samsung 55&quot; Smart TV','No backlight, power LED on')">Samsung TV</span>
+              <span class="quick-chip" onclick="quickFill('iPhone 12','Screen black after drop')">iPhone 12</span>
+              <span class="quick-chip" onclick="quickFill('Dell Laptop','Not charging, no power')">Dell Laptop</span>
+              <span class="quick-chip" onclick="quickFill('Power Amplifier','No sound output, blown transistors')">Amplifier</span>
+              <span class="quick-chip" onclick="quickFill('Inverter 1000W','No output, power LED blinking')">Inverter</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Device *</label>
+            <input id="rg-device" placeholder="e.g. Samsung 55&quot; Smart TV UA55NU7100">
+          </div>
+          <div class="form-group">
+            <label class="field-label">Issue / Fault *</label>
+            <textarea id="rg-issue" rows="3" placeholder="Describe the specific fault to repair..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="field-label">Skill Level</label>
+            <div class="level-group">
+              <button class="level-btn" onclick="setLevel(this,'Beginner')">Beginner</button>
+              <button class="level-btn active" onclick="setLevel(this,'Intermediate')">Intermediate</button>
+              <button class="level-btn" onclick="setLevel(this,'Advanced')">Advanced</button>
+            </div>
+            <input type="hidden" id="rg-level" value="Intermediate">
+          </div>
+          <button class="btn btn-primary" onclick="generateGuide()">🔧 Generate Repair Guide</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Repair Guide</div>
+          <div id="repair-result"><div class="empty-state"><div class="empty-icon">🔧</div><p>Fill in device and issue details to generate a complete guide.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Circuit AI -->
+    <div id="page-circuit" class="page">
+      <div class="page-header">
+        <div class="page-title">Circuit Explanation AI</div>
+        <div class="page-sub">Upload a circuit diagram or PCB image for detailed AI explanation</div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Upload Circuit / PCB</div>
+          <div class="uploader">
+            <input type="file" accept="image/*" id="circ-file" onchange="previewImage('circ-file','circ-preview','circ-placeholder')">
+            <div class="upload-placeholder" id="circ-placeholder">
+              <div class="upload-icon">⚙️</div>
+              <div class="upload-label">Drop circuit diagram or PCB image here</div>
+            </div>
+            <img id="circ-preview" class="upload-preview" alt="Circuit preview">
+          </div>
+          <div class="tips-row">
+            <span class="tip-chip">📐 Circuit diagrams</span>
+            <span class="tip-chip">🖥️ PCB photos</span>
+            <span class="tip-chip">📸 Schematics</span>
+          </div>
+          <button class="btn btn-primary" onclick="explainCircuit()">⚙️ Explain Circuit</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Circuit Explanation</div>
+          <div id="circ-result"><div class="empty-state"><div class="empty-icon">⚙️</div><p>Upload a circuit diagram or PCB image to get a detailed explanation.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learning -->
+    <div id="page-learning" class="page">
+      <div class="page-header">
+        <div class="page-title">Electronics Learning Center</div>
+        <div class="page-sub">AI-powered lessons on electronics fundamentals and repair topics</div>
+      </div>
+      <div class="learn-wrap">
+        <div class="topic-panel">
+          <div class="topic-cat">⚡ Fundamentals</div>
+          <button class="topic-btn" onclick="loadTopic(this,'Voltage and Current in Electronics')">Voltage &amp; Current</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Resistance and Ohm\'s Law')">Resistance &amp; Ohm's Law</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Power and Energy in Circuits')">Power &amp; Energy</button>
+          <button class="topic-btn" onclick="loadTopic(this,'AC vs DC power in electronics')">AC vs DC</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Capacitance in electronics')">Capacitance</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Inductance and coils in electronics')">Inductance</button>
+
+          <div class="topic-cat">🔩 Components</div>
+          <button class="topic-btn" onclick="loadTopic(this,'Resistors in electronics')">Resistors</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Capacitors in electronics')">Capacitors</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Diodes in electronics')">Diodes</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Transistors NPN PNP')">Transistors</button>
+          <button class="topic-btn" onclick="loadTopic(this,'MOSFET transistors')">MOSFETs</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Integrated Circuits ICs')">ICs &amp; Microcontrollers</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Transformers in electronics')">Transformers</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Relays in electronics')">Relays</button>
+
+          <div class="topic-cat">🔧 Repair Topics</div>
+          <button class="topic-btn" onclick="loadTopic(this,'Smart TV repair techniques backlight power supply')">Smart TV Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Smartphone screen and charging repair')">Smartphone Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Laptop power and motherboard repair')">Laptop Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Power amplifier repair output transistors')">Amplifier Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Inverter repair troubleshooting')">Inverter Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Solar charge controller MPPT repair')">Solar System Repair</button>
+          <button class="topic-btn" onclick="loadTopic(this,'Computer motherboard diagnosis and repair')">Motherboard Repair</button>
+        </div>
+        <div class="panel" style="max-height:calc(100vh - 180px);overflow-y:auto">
+          <div class="panel-title" id="learn-topic-title">Select a Topic</div>
+          <div id="learn-result"><div class="empty-state"><div class="empty-icon">📚</div><p>Select any topic from the left to get an AI-powered lesson.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div id="page-history" class="page">
+      <div class="page-header">
+        <div class="page-title">Repair History</div>
+        <div class="page-sub" id="hist-count">Loading...</div>
+      </div>
+      <div class="history-wrap">
+        <div class="history-list" id="history-list">
+          <div class="search-row">
+            <span>🔍</span>
+            <input placeholder="Search repairs..." oninput="searchHistory(this.value)" id="hist-search">
+          </div>
+          <div id="hist-items"></div>
+        </div>
+        <div class="detail-panel" id="detail-panel">
+          <div class="empty-state"><div class="empty-icon">📋</div><p>Select a repair record to view details.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure your Anthropic API key to enable AI features</div>
+      </div>
+
+      <div id="api-status-banner" class="api-banner" style="display:none"></div>
+
+      <div class="settings-card">
+        <h3>🔑 Anthropic API Key</h3>
+        <p>Your API key is stored locally in the database on your computer. It is never sent anywhere except directly to Anthropic's servers when making AI requests.</p>
+
+        <div id="current-key-display" class="key-display none">No API key configured</div>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="field-label">Enter / Replace API Key</label>
+          <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+        </div>
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="saveApiKey()">💾 Save API Key</button>
+          <button class="btn btn-outline" onclick="toggleKeyVisibility()" id="toggle-vis-btn">👁 Show</button>
+          <button class="btn btn-danger" onclick="deleteApiKey()">🗑️ Remove Key</button>
+        </div>
+        <div id="key-feedback" style="margin-top:12px;font-size:13px"></div>
+
+        <div class="help-box">
+          <p><strong style="color:var(--text2)">How to get your API key:</strong></p>
+          <p>1. Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+          <p>2. Sign in or create a free account</p>
+          <p>3. Click <strong style="color:var(--text2)">API Keys</strong> in the left menu</p>
+          <p>4. Click <strong style="color:var(--text2)">Create Key</strong>, copy it, paste it above</p>
+          <p style="margin-top:8px;color:var(--accent)">⚠️ Keep your API key private. Do not share it with anyone.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let lastDiagResult = '';
+let lastDiagData = {};
+let allHistory = [];
+let selectedRepairId = null;
+
+// ── Navigation ─────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'history') loadHistory();
+  if (id === 'dashboard') loadDashboard();
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Loading / Result helpers ───────────────────────────────────────────
+function setLoading(elId, msg) {
+  document.getElementById(elId).innerHTML = `<div class="loading-state"><div class="spinner-ring"></div><p>${msg}</p></div>`;
+}
+function setError(elId, msg) {
+  document.getElementById(elId).innerHTML = `<div class="error-state"><div class="empty-icon">⚠️</div><p>${msg}</p></div>`;
+}
+
+// Convert markdown-ish text to HTML
+function mdToHtml(text) {
+  let html = '';
+  const lines = text.split('\n');
+  let inUl = false, inOl = false;
+  for (let line of lines) {
+    if (line.startsWith('## ')) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      html += `<h3>${line.slice(3)}</h3>`;
+    } else if (/^[•\-] /.test(line)) {
+      if (inOl) { html += '</ol>'; inOl = false; }
+      if (!inUl) { html += '<ul>'; inUl = true; }
+      html += `<li>${inlineMd(line.replace(/^[•\-] /,''))}</li>`;
+    } else if (/^\d+\. /.test(line)) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (!inOl) { html += '<ol>'; inOl = true; }
+      html += `<li>${inlineMd(line.replace(/^\d+\. /,''))}</li>`;
+    } else if (line.startsWith('⚠️')) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      html += `<div class="warn">${line}</div>`;
+    } else if (line.trim()) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      html += `<p>${inlineMd(line)}</p>`;
+    } else {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+    }
+  }
+  if (inUl) html += '</ul>';
+  if (inOl) html += '</ol>';
+  return html;
+}
+
+function inlineMd(s) {
+  return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g,'<em>$1</em>')
+          .replace(/`(.+?)`/g,'<code style="background:rgba(59,130,246,.12);color:var(--blue2);padding:1px 5px;border-radius:3px;font-size:12px">$1</code>');
+}
+
+// ── Image preview ──────────────────────────────────────────────────────
+function previewImage(inputId, previewId, placeholderId) {
+  const file = document.getElementById(inputId).files[0];
+  if (!file) return;
+  const preview = document.getElementById(previewId);
+  const ph = document.getElementById(placeholderId);
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  ph.style.display = 'none';
+}
+
+// ── API helpers ────────────────────────────────────────────────────────
+async function postJSON(url, data) {
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  return r.json();
+}
+
+async function postForm(url, formData) {
+  const r = await fetch(url, { method:'POST', body:formData });
+  return r.json();
+}
+
+// ── AI Diagnostic ──────────────────────────────────────────────────────
+async function runDiagnosis() {
+  const type = document.getElementById('d-type').value;
+  const symptoms = document.getElementById('d-symptoms').value.trim();
+  if (!symptoms) { showToast('Please describe the symptoms first', '#ef4444'); return; }
+  setLoading('diag-result', 'AI is analyzing the fault...');
+  document.getElementById('diag-actions').style.display = 'none';
+  document.getElementById('diag-save-row').style.display = 'none';
+  lastDiagData = {
+    device_type: type, brand: document.getElementById('d-brand').value,
+    model: document.getElementById('d-model').value, symptoms
+  };
+  try {
+    const res = await postJSON('/api/diagnose', lastDiagData);
+    if (!res.success) throw new Error(res.error);
+    lastDiagResult = res.result;
+    document.getElementById('diag-result').innerHTML = `<div class="result-box">${mdToHtml(res.result)}</div>`;
+    document.getElementById('diag-actions').style.display = 'flex';
+    document.getElementById('diag-save-row').style.display = 'flex';
+  } catch(e) { setError('diag-result', e.message); }
+}
+
+async function saveRepair() {
+  const notes = document.getElementById('d-notes').value;
+  const res = await postJSON('/api/history', { ...lastDiagData, diagnosis: lastDiagResult, notes });
+  if (res.success) showToast('✓ Saved to History');
+}
+
+let lastSavedId = null;
+async function exportCurrentPDF() {
+  // Save first to get an ID, then open PDF
+  const notes = document.getElementById('d-notes').value;
+  const res = await postJSON('/api/history', { ...lastDiagData, diagnosis: lastDiagResult, notes });
+  if (res.success && res.id) window.open('/api/pdf/' + res.id, '_blank');
+  else showToast('Save the record first', '#ef4444');
+}
+
+// ── PCB Analyzer ───────────────────────────────────────────────────────
+async function analyzePCB() {
+  const file = document.getElementById('pcb-file').files[0];
+  if (!file) { showToast('Please upload a PCB image first', '#ef4444'); return; }
+  setLoading('pcb-result', 'AI is scanning the PCB...');
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const res = await postForm('/api/pcb', fd);
+    if (!res.success) throw new Error(res.error);
+    document.getElementById('pcb-result').innerHTML = `<div class="result-box">${mdToHtml(res.result)}</div>`;
+  } catch(e) { setError('pcb-result', e.message); }
+}
+
+// ── Component Identifier ───────────────────────────────────────────────
+async function identifyComponent() {
+  const file = document.getElementById('comp-file').files[0];
+  if (!file) { showToast('Please upload a component image first', '#ef4444'); return; }
+  setLoading('comp-result', 'AI is identifying the component...');
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const res = await postForm('/api/component', fd);
+    if (!res.success) throw new Error(res.error);
+    document.getElementById('comp-result').innerHTML = `<div class="result-box">${mdToHtml(res.result)}</div>`;
+  } catch(e) { setError('comp-result', e.message); }
+}
+
+// ── Repair Guide ───────────────────────────────────────────────────────
+function setLevel(btn, val) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('rg-level').value = val;
+}
+function quickFill(device, issue) {
+  document.getElementById('rg-device').value = device;
+  document.getElementById('rg-issue').value = issue;
+}
+async function generateGuide() {
+  const device = document.getElementById('rg-device').value.trim();
+  const issue = document.getElementById('rg-issue').value.trim();
+  if (!device || !issue) { showToast('Please fill in device and issue', '#ef4444'); return; }
+  setLoading('repair-result', 'AI is generating your repair guide...');
+  try {
+    const res = await postJSON('/api/repair-guide', { device, issue, level: document.getElementById('rg-level').value });
+    if (!res.success) throw new Error(res.error);
+    document.getElementById('repair-result').innerHTML = `<div class="result-box">${mdToHtml(res.result)}</div>`;
+  } catch(e) { setError('repair-result', e.message); }
+}
+
+// ── Circuit Explain ────────────────────────────────────────────────────
+async function explainCircuit() {
+  const file = document.getElementById('circ-file').files[0];
+  if (!file) { showToast('Please upload a circuit image first', '#ef4444'); return; }
+  setLoading('circ-result', 'AI is analyzing the circuit...');
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const res = await postForm('/api/circuit', fd);
+    if (!res.success) throw new Error(res.error);
+    document.getElementById('circ-result').innerHTML = `<div class="result-box">${mdToHtml(res.result)}</div>`;
+  } catch(e) { setError('circ-result', e.message); }
+}
+
+// ── Learning ───────────────────────────────────────────────────────────
+async function loadTopic(btn, topic) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('learn-topic-title').textContent = '📚 ' + btn.textContent;
+  setLoading('learn-result', 'AI is preparing the lesson...');
+  try {
+    const res = await postJSON('/api/learn', { topic });
+    if (!res.success) throw new Error(res.error);
+    document.getElementById('learn-result').innerHTML = `<div class="result-box" style="max-height:none">${mdToHtml(res.result)}</div>`;
+  } catch(e) { setError('learn-result', e.message); }
+}
+
+// ── History ────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const res = await fetch('/api/history');
+  allHistory = await res.json();
+  document.getElementById('hist-count').textContent = `${allHistory.length} repair${allHistory.length !== 1 ? 's' : ''} stored`;
+  renderHistory(allHistory);
+}
+
+function renderHistory(items) {
+  const el = document.getElementById('hist-items');
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><p>No records found.</p></div>';
+    return;
+  }
+  el.innerHTML = items.map(r => `
+    <div class="history-card ${r.id === selectedRepairId ? 'active' : ''}" onclick="showDetail(${r.id})">
+      <div class="hist-device">${r.device_type || 'Unknown'} ${r.brand ? '· ' + r.brand : ''}</div>
+      <div class="hist-symp">${(r.symptoms || '').slice(0, 80)}${(r.symptoms || '').length > 80 ? '...' : ''}</div>
+      <div class="hist-date">${r.created_at ? r.created_at.slice(0, 10) : ''}</div>
+    </div>
+  `).join('');
+}
+
+function searchHistory(q) {
+  const filtered = q ? allHistory.filter(r =>
+    (r.device_type || '').toLowerCase().includes(q.toLowerCase()) ||
+    (r.brand || '').toLowerCase().includes(q.toLowerCase()) ||
+    (r.symptoms || '').toLowerCase().includes(q.toLowerCase())
+  ) : allHistory;
+  renderHistory(filtered);
+}
+
+function showDetail(id) {
+  selectedRepairId = id;
+  const r = allHistory.find(x => x.id === id);
+  if (!r) return;
+  renderHistory(allHistory.filter(x => {
+    const q = document.getElementById('hist-search').value.toLowerCase();
+    return !q || (r.device_type||'').toLowerCase().includes(q) || (r.brand||'').toLowerCase().includes(q) || (r.symptoms||'').toLowerCase().includes(q);
+  }));
+  document.getElementById('detail-panel').innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-title">${r.device_type || 'Unknown'} — ${r.brand || ''} ${r.model || ''}</div>
+        <div class="detail-date">${r.created_at ? r.created_at.slice(0,16).replace('T',' ') : ''}</div>
+      </div>
+      <div class="detail-actions">
+        <a href="/api/pdf/${r.id}" target="_blank"><button class="btn btn-outline btn-sm">📄 PDF</button></a>
+        <button class="btn btn-danger" onclick="deleteRepair(${r.id})">🗑️ Delete</button>
+      </div>
+    </div>
+    <div class="detail-section">
+      <label>Symptoms</label>
+      <div class="detail-content">${r.symptoms || '—'}</div>
+    </div>
+    <div class="detail-section">
+      <label>AI Diagnosis</label>
+      <div class="result-box" style="max-height:300px">${mdToHtml(r.diagnosis || '—')}</div>
+    </div>
+    <div class="detail-section">
+      <label>Technician Notes <span style="color:var(--text3);font-weight:normal;text-transform:none;letter-spacing:0">(click to edit)</span></label>
+      <textarea id="edit-notes-${r.id}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:vertical;width:100%;outline:none" rows="3"
+        onblur="saveNotes(${r.id})">${r.notes || ''}</textarea>
+    </div>
+  `;
+}
+
+async function saveNotes(id) {
+  const val = document.getElementById('edit-notes-' + id)?.value || '';
+  await postJSON('/api/history/' + id + '/notes', { notes: val });
+  const rec = allHistory.find(r => r.id === id);
+  if (rec) rec.notes = val;
+}
+
+async function deleteRepair(id) {
+  if (!confirm('Delete this repair record?')) return;
+  await fetch('/api/history/' + id, { method: 'DELETE' });
+  selectedRepairId = null;
+  document.getElementById('detail-panel').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Select a repair record to view details.</p></div>';
+  loadHistory();
+  showToast('Record deleted');
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const res = await fetch('/api/history');
+  const data = await res.json();
+  document.getElementById('stat-repairs').textContent = data.length;
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('stat-today').textContent = data.filter(r => (r.created_at || '').startsWith(today)).length;
+  const recent = data.slice(0, 4);
+  const el = document.getElementById('recent-list');
+  if (!recent.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><p>No repairs yet. Run your first diagnosis above.</p></div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => `
+    <div class="recent-item">
+      <div>
+        <div class="recent-device">🔧 ${r.device_type || 'Unknown'} ${r.brand ? '· ' + r.brand : ''}</div>
+        <div class="recent-symp">${(r.symptoms || '').slice(0, 80)}</div>
+      </div>
+      <div class="recent-date">${(r.created_at || '').slice(0, 10)}</div>
+    </div>
+  `).join('');
+}
+
+loadDashboard();
+
+// ── Settings ───────────────────────────────────────────────────────────
+async function loadKeyStatus() {
+  const res = await fetch('/api/settings/apikey');
+  const data = await res.json();
+  const disp = document.getElementById('current-key-display');
+  const banner = document.getElementById('api-status-banner');
+  if (data.configured) {
+    disp.textContent = '✓ Key configured: ' + data.masked;
+    disp.className = 'key-display';
+    showGlobalBanner(true);
+  } else {
+    disp.textContent = 'No API key configured';
+    disp.className = 'key-display none';
+    showGlobalBanner(false);
+  }
+}
+
+function showGlobalBanner(ok) {
+  // Show banner on all pages if key missing
+  const pages = ['dashboard','diagnostic','pcb','component','repair','circuit','learning','history'];
+  pages.forEach(pid => {
+    const pg = document.getElementById('page-' + pid);
+    if (!pg) return;
+    let b = pg.querySelector('.global-api-banner');
+    if (ok) { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('div');
+      b.className = 'api-banner global-api-banner';
+      b.innerHTML = '<p>⚠️ No API key configured — AI features will not work.</p><button class="btn btn-danger btn-sm" onclick="showPage('settings',document.getElementById('nav-settings'))">Configure Key →</button>';
+      pg.insertBefore(b, pg.querySelector('.page-header').nextSibling);
+    }
+  });
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const fb = document.getElementById('key-feedback');
+  if (!key) { fb.innerHTML = '<span style="color:#f87171">Please enter an API key.</span>'; return; }
+  fb.innerHTML = '<span style="color:var(--text3)">Verifying key...</span>';
+  try {
+    const res = await fetch('/api/settings/apikey', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({api_key: key})
+    });
+    const data = await res.json();
+    if (data.success) {
+      fb.innerHTML = '<span style="color:var(--green)">✓ API key saved and verified successfully!</span>';
+      document.getElementById('api-key-input').value = '';
+      loadKeyStatus();
+      showToast('✓ API key saved!');
+    } else {
+      fb.innerHTML = `<span style="color:#f87171">✗ ${data.error}</span>`;
+    }
+  } catch(e) {
+    fb.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+  }
+}
+
+async function deleteApiKey() {
+  if (!confirm('Remove the saved API key?')) return;
+  await fetch('/api/settings/apikey', {method:'DELETE'});
+  document.getElementById('key-feedback').innerHTML = '<span style="color:var(--text3)">API key removed.</span>';
+  loadKeyStatus();
+  showToast('API key removed', '#ef4444');
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('api-key-input');
+  const btn = document.getElementById('toggle-vis-btn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈 Hide'; }
+  else { inp.type = 'password'; btn.textContent = '👁 Show'; }
+}
+
+// Load key status on startup
+loadKeyStatus();
+
+</script>
+</body>
+</html>
